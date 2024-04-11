@@ -67,7 +67,7 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
             chunks_len = 0
             arg_paths: list[str] = []
             for path in paths:
-                arg_chunks.append(f"path='{root_path / path}'")
+                arg_chunks.append(f"path='{(root_path / path).resolve()}'")
                 arg_paths.append(path)
                 chunks_len += len(arg_chunks[-1])
                 if chunks_len + len(arg_chunks) >= limit:
