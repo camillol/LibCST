@@ -86,16 +86,19 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
                 raise exc
 
             if return_code != 0:
-                raise Exception(f"stderr:\n {stderr}\nstdout:\n {stdout}")
+                raise Exception(f"pyre exit code {return_code} stderr:\n {stderr}")
             try:
-                batch_resp = json.loads(stdout)["response"]
-                for path, item_resp in zip(batch_paths, batch_resp):
+                batch_resp = json.loads(stdout)
+                if "error" in batch_resp:
+                    print(f"Error in pyre query batch: {batch_resp['error']}")
+                    continue
+                for path, item_resp in zip(batch_paths, batch_resp["response"]):
                     if "error" in item_resp:
-                        print(f"Error in pyre query: {item_resp['error']}")
+                        print(f"Error in pyre query types: {item_resp['error']}")
                         continue
-                    result.update({path: _process_pyre_data(data) for path, data in zip([path], item_resp)})
+                    result.update({path: _process_pyre_data(data) for path, data in zip([path], item_resp["response"])})
             except Exception as e:
-                raise Exception(f"{e}\n\nstderr:\n {stderr}\nstdout:\n {stdout}")
+                raise Exception(f"{e}\n\nstderr:\n {stderr}")
 
         return result
 
