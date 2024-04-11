@@ -12,25 +12,13 @@ from libcst.metadata.base_provider import (
     ProviderT,
     VisitorMetadataProvider,
 )
-from libcst.metadata.expression_context_provider import (
-    ExpressionContext,
-    ExpressionContextProvider,
-)
+from libcst.metadata.expression_context_provider import ExpressionContext, ExpressionContextProvider
 from libcst.metadata.file_path_provider import FilePathProvider
 from libcst.metadata.full_repo_manager import FullRepoManager
-from libcst.metadata.name_provider import (
-    FullyQualifiedNameProvider,
-    QualifiedNameProvider,
-)
+from libcst.metadata.name_provider import FullyQualifiedNameProvider, QualifiedNameProvider
 from libcst.metadata.parent_node_provider import ParentNodeProvider
-from libcst.metadata.position_provider import (
-    PositionProvider,
-    WhitespaceInclusivePositionProvider,
-)
-from libcst.metadata.reentrant_codegen import (
-    CodegenPartial,
-    ExperimentalReentrantCodegenProvider,
-)
+from libcst.metadata.position_provider import PositionProvider, WhitespaceInclusivePositionProvider
+from libcst.metadata.reentrant_codegen import CodegenPartial, ExperimentalReentrantCodegenProvider
 from libcst.metadata.scope_provider import (
     Access,
     Accesses,
@@ -50,7 +38,10 @@ from libcst.metadata.scope_provider import (
     ScopeProvider,
 )
 from libcst.metadata.span_provider import ByteSpanPositionProvider, CodeSpan
-from libcst.metadata.type_inference_provider import TypeInferenceProvider
+from libcst.metadata.type_inference_provider import (
+    NonCachedTypeInferenceProvider,
+    TypeInferenceProvider,
+)
 from libcst.metadata.wrapper import MetadataWrapper
 
 __all__ = [
@@ -87,6 +78,7 @@ __all__ = [
     "Assignments",
     "Accesses",
     "TypeInferenceProvider",
+    "NonCachedTypeInferenceProvider",
     "FullRepoManager",
     "AccessorProvider",
     "FilePathProvider",
