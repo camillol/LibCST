@@ -58,28 +58,10 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
         timeout: Optional[int] = None,
         **kwargs: Any,
     ) -> Mapping[str, object]:
-        MAX_ARG_STRLEN=2**17
-
-        def chunked_path_queries(root_path: Path, paths: List[str], limit:int=MAX_ARG_STRLEN):
-            QUERY = "types({})"
-            limit -= len(QUERY.format(""))
-            arg_chunks: list[str] = []
-            chunks_len = 0
-            arg_paths: list[str] = []
-            for path in paths:
-                arg_chunks.append(f"path='{(root_path / path).resolve()}'")
-                arg_paths.append(path)
-                chunks_len += len(arg_chunks[-1])
-                if chunks_len + len(arg_chunks) >= limit:
-                    yield QUERY.format(",".join(arg_chunks[:-1])), arg_paths[:-1]
-                    arg_chunks = arg_chunks[-1:]
-                    arg_paths = arg_paths[-1:]
-                    chunks_len = len(arg_chunks[-1])
-            yield QUERY.format(",".join(arg_chunks)), arg_paths
-
         result: dict[str, object] = {}
-        for query_arg, query_paths in chunked_path_queries(root_path, paths):
-            cmd_args = ["pyre", "--noninteractive", "query", query_arg]
+        # We have to query them one by one because a single bad path will spoil the whole query.
+        for path in paths:
+            cmd_args: List[str] = ["pyre", "--noninteractive", "query", f"types(path='{(root_path / path).resolve()}')"]
             try:
                 stdout, stderr, return_code = run_command(cmd_args, timeout=timeout)
             except subprocess.TimeoutExpired as exc:
@@ -90,8 +72,10 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
             try:
                 resp = json.loads(stdout)["response"]
             except Exception as e:
-                raise Exception(f"{e}\n\nstderr:\n {stderr}\nstdout:\n {stdout}")
-            result.update({path: _process_pyre_data(data) for path, data in zip(query_paths, resp)})
+                print(f"Error parsing pyre response: {repr(e)}\n\nstderr:\n {stderr}\nstdout:\n {stdout}")
+                continue
+                # raise Exception(f"{e}\n\nstderr:\n {stderr}\nstdout:\n {stdout}")
+            result.update({path: _process_pyre_data(data) for path, data in zip([path], resp)})
 
         return result
 
