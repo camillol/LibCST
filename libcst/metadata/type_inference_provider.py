@@ -58,10 +58,28 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
         timeout: Optional[int] = None,
         **kwargs: Any,
     ) -> Mapping[str, object]:
+        MAX_ARG_STRLEN=2**17
+
+        def chunked_path_queries(root_path: Path, paths: List[str], limit:int=MAX_ARG_STRLEN):
+            BATCH = "batch({})"
+            limit -= len(BATCH.format(""))
+            arg_chunks: list[str] = []
+            chunks_len = 0
+            arg_paths: list[str] = []
+            for path in paths:
+                arg_chunks.append(f"types(path='{(root_path / path).resolve()}')")
+                arg_paths.append(path)
+                chunks_len += len(arg_chunks[-1])
+                if chunks_len + len(arg_chunks) >= limit:
+                    yield BATCH.format(",".join(arg_chunks[:-1])), arg_paths[:-1]
+                    arg_chunks = arg_chunks[-1:]
+                    arg_paths = arg_paths[-1:]
+                    chunks_len = len(arg_chunks[-1])
+            yield BATCH.format(",".join(arg_chunks)), arg_paths
+
         result: dict[str, object] = {}
-        # We have to query them one by one because a single bad path will spoil the whole query.
-        for path in paths:
-            cmd_args: List[str] = ["pyre", "--noninteractive", "query", f"types(path='{(root_path / path).resolve()}')"]
+        for batch_arg, batch_paths in chunked_path_queries(root_path, paths):
+            cmd_args = ["pyre", "--noninteractive", "query", batch_arg]
             try:
                 stdout, stderr, return_code = run_command(cmd_args, timeout=timeout)
             except subprocess.TimeoutExpired as exc:
@@ -70,12 +88,14 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
             if return_code != 0:
                 raise Exception(f"stderr:\n {stderr}\nstdout:\n {stdout}")
             try:
-                resp = json.loads(stdout)["response"]
+                batch_resp = json.loads(stdout)["response"]
+                for path, item_resp in zip(batch_paths, batch_resp):
+                    if "error" in item_resp:
+                        print(f"Error in pyre query: {item_resp['error']}")
+                        continue
+                    result.update({path: _process_pyre_data(data) for path, data in zip([path], item_resp)})
             except Exception as e:
-                print(f"Error parsing pyre response: {repr(e)}\n\nstderr:\n {stderr}\nstdout:\n {stdout}")
-                continue
-                # raise Exception(f"{e}\n\nstderr:\n {stderr}\nstdout:\n {stdout}")
-            result.update({path: _process_pyre_data(data) for path, data in zip([path], resp)})
+                raise Exception(f"{e}\n\nstderr:\n {stderr}\nstdout:\n {stdout}")
 
         return result
 
