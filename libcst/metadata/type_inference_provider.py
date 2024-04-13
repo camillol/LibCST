@@ -5,6 +5,7 @@
 
 import json
 import subprocess
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, TypedDict
 
@@ -99,7 +100,7 @@ class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
 
     def visit_Module(self, node: cst.Module) -> None:
         self.path = self.get_metadata(FilePathProvider, node)
-        cache = _gen_rel_path_to_pyre_data_mapping(Path("/"), paths=[str(self.path)], timeout=None)
+        cache = _gen_rel_path_to_pyre_data_mapping_one_path(Path("/"), path=str(self.path), timeout=None)
         cache_types = cache.get(str(self.path), {}).get("types", [])
         self.lookup: Dict[CodeRange, str] = _make_type_lookup(cache_types)
 
@@ -117,6 +118,12 @@ class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
     def visit_Call(self, node: cst.Call) -> Optional[bool]:
         self._parse_metadata(node)
 
+
+@lru_cache(maxsize=10)
+def _gen_rel_path_to_pyre_data_mapping_one_path(
+    root_path: Path, path: str, timeout: Optional[int]
+) -> Mapping[str, PyreData]:
+    return _gen_rel_path_to_pyre_data_mapping(root_path, [path], timeout)
 
 
 MAX_ARG_STRLEN=2**17
