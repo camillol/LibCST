@@ -81,6 +81,10 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
     def visit_Call(self, node: cst.Call) -> Optional[bool]:
         self._parse_metadata(node)
 
+    def visit_Assign(self, node: cst.Assign) -> Optional[bool]:
+        self._parse_metadata(node.value)
+
+
 class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
     """
     Access inferred type annotation through `Pyre Query API <https://pyre-check.org/docs/querying-pyre.html>`_.
@@ -117,6 +121,9 @@ class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
 
     def visit_Call(self, node: cst.Call) -> Optional[bool]:
         self._parse_metadata(node)
+
+    def visit_Assign(self, node: cst.Assign) -> Optional[bool]:
+        self._parse_metadata(node.value)
 
 
 @lru_cache(maxsize=10)
