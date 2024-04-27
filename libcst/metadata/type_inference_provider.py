@@ -104,8 +104,8 @@ class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
 
     def visit_Module(self, node: cst.Module) -> None:
         self.path = self.get_metadata(FilePathProvider, node)
-        cache = _gen_rel_path_to_pyre_data_mapping_one_path(Path("/"), path=str(self.path), timeout=None)
-        cache_types = cache.get(str(self.path), {}).get("types", [])
+        data = _get_pyre_data_for_path(Path("/"), str(self.path), timeout=None)
+        cache_types = data.get("types", [])
         self.lookup: Dict[CodeRange, str] = _make_type_lookup(cache_types)
 
     def _parse_metadata(self, node: cst.CSTNode) -> None:
@@ -125,12 +125,21 @@ class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
     def visit_Assign(self, node: cst.Assign) -> Optional[bool]:
         self._parse_metadata(node.value)
 
+    @classmethod
+    def cache_batch(cls, paths: List[str], timeout: Optional[int]=None) -> None:
+        global _pyre_cache
+        _pyre_cache |= _gen_rel_path_to_pyre_data_mapping(Path("/"), paths, timeout)
 
-@lru_cache(maxsize=10)
-def _gen_rel_path_to_pyre_data_mapping_one_path(
+_pyre_cache: dict[str, PyreData] = {}
+
+def _get_pyre_data_for_path(
     root_path: Path, path: str, timeout: Optional[int]
-) -> Mapping[str, PyreData]:
-    return _gen_rel_path_to_pyre_data_mapping(root_path, [path], timeout)
+) -> PyreData:
+    global _pyre_cache
+    data = _pyre_cache.get(path)
+    if data is None:
+        data = _pyre_cache[path] = _gen_rel_path_to_pyre_data_mapping(Path("/"), paths=[path], timeout=None).get(path, {})
+    return data
 
 
 MAX_ARG_STRLEN=2**17
