@@ -100,6 +100,7 @@ class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
     """
 
     METADATA_DEPENDENCIES = (PositionProvider, FilePathProvider)
+    PyreData = PyreData
 
 
     def visit_Module(self, node: cst.Module) -> None:
@@ -126,9 +127,13 @@ class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
         self._parse_metadata(node.value)
 
     @classmethod
-    def cache_batch(cls, paths: List[str], timeout: Optional[int]=None) -> None:
+    def query_batch(cls, paths: List[str], timeout: Optional[int]=None) -> Mapping[str, PyreData]:
+        return _gen_rel_path_to_pyre_data_mapping(Path("/"), paths, timeout)
+
+    @classmethod
+    def cache_batch(cls, batch_data: Mapping[str, PyreData]) -> None:
         global _pyre_cache
-        _pyre_cache |= _gen_rel_path_to_pyre_data_mapping(Path("/"), paths, timeout)
+        _pyre_cache |= batch_data
 
 _pyre_cache: dict[str, PyreData] = {}
 
