@@ -138,6 +138,7 @@ def _get_pyre_data_for_path(
     global _pyre_cache
     data = _pyre_cache.get(path)
     if data is None:
+        print(f"Cache miss for {path}; have keys like {list(_pyre_cache.keys())[:5]}")
         data = _pyre_cache[path] = _gen_rel_path_to_pyre_data_mapping(Path("/"), paths=[path], timeout=None).get(path, {})
     return data
 
