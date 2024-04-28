@@ -138,7 +138,7 @@ def _get_pyre_data_for_path(
     global _pyre_cache
     data = _pyre_cache.get(path)
     if data is None:
-        print(f"Cache miss for {path}; have keys like {list(_pyre_cache.keys())[:5]}")
+        print(f"Cache miss for {path}; have keys like {list(_pyre_cache.keys())[:1]}")
         data = _pyre_cache[path] = _gen_rel_path_to_pyre_data_mapping(Path("/"), paths=[path], timeout=None).get(path, {})
     return data
 
@@ -183,6 +183,7 @@ def _gen_rel_path_to_pyre_data_mapping(
             for path, item_resp in zip(batch_paths, batch_resp["response"]):
                 if "error" in item_resp:
                     print(f"Error in pyre query types: {item_resp['error']}")
+                    result[path] = {}
                     continue
                 result.update({path: _process_pyre_data(data) for path, data in zip([path], item_resp["response"])})
         except Exception as e:
