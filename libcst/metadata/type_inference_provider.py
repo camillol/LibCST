@@ -85,7 +85,7 @@ class TypeInferenceProvider(BatchableMetadataProvider[str]):
         self._parse_metadata(node.value)
 
 
-class NonCachedTypeInferenceProvider(BatchableMetadataProvider[str]):
+class LazyTypeInferenceProvider(BatchableMetadataProvider[str]):
     """
     Access inferred type annotation through `Pyre Query API <https://pyre-check.org/docs/querying-pyre.html>`_.
     It requires `setup watchman <https://pyre-check.org/docs/getting-started/>`_

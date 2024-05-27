@@ -38,10 +38,7 @@ from libcst.metadata.scope_provider import (
     ScopeProvider,
 )
 from libcst.metadata.span_provider import ByteSpanPositionProvider, CodeSpan
-from libcst.metadata.type_inference_provider import (
-    NonCachedTypeInferenceProvider,
-    TypeInferenceProvider,
-)
+from libcst.metadata.type_inference_provider import LazyTypeInferenceProvider, TypeInferenceProvider
 from libcst.metadata.wrapper import MetadataWrapper
 
 __all__ = [
@@ -78,7 +75,7 @@ __all__ = [
     "Assignments",
     "Accesses",
     "TypeInferenceProvider",
-    "NonCachedTypeInferenceProvider",
+    "LazyTypeInferenceProvider",
     "FullRepoManager",
     "AccessorProvider",
     "FilePathProvider",
